@@ -1,0 +1,47 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id    String   @id @default(cuid())
+  name  String
+  email String   @unique
+
+  notes   CreativeAssetNote[]
+  assets  CreativeAsset[] @relation("UserAssets")
+}
+
+model CreativeAsset {
+  id        String   @id @default(cuid())
+  mediaUrl  String
+  adCopy    String
+  product   String
+  // Store platforms as comma-separated for V1 simplicity (can normalize later)
+  platforms String
+  status    String   @default("queue") // queue, needs_revision, approved, live, disapproved
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  createdBy        User   @relation("UserAssets", fields: [createdByUserId], references: [id])
+  createdByUserId  String
+
+  notes   CreativeAssetNote[]
+}
+
+model CreativeAssetNote {
+  id           String   @id @default(cuid())
+  type         String   // approval, revision_request, disapproval, comment, status_change
+  message      String
+  createdAt    DateTime @default(now())
+
+  asset        CreativeAsset @relation(fields: [assetId], references: [id])
+  assetId      String
+
+  author       User   @relation(fields: [authorUserId], references: [id])
+  authorUserId String
+}
